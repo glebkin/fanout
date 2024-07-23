@@ -33,7 +33,8 @@ func NewWeightedRandSelector[T any](values []T, weights []int) *WeightedRand[T] 
 		values:      make([]T, len(values)),
 		weights:     make([]int, len(weights)),
 		totalWeight: 0,
-		r:           rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64())),
+		//nolint:gosec // it's overhead to use crypto/rand here
+		r: rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64())),
 	}
 	// copy the underlying array values as we're going to modify content of slices
 	copy(wrs.values, values)
@@ -53,7 +54,6 @@ func (wrs *WeightedRand[T]) Pick() T {
 		return defaultVal
 	}
 
-	//nolint:gosec // it's overhead to use crypto/rand here
 	rNum := wrs.r.IntN(wrs.totalWeight) + 1
 
 	sum := 0

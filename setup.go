@@ -135,7 +135,7 @@ func parsefanoutStanza(c *caddyfile.Dispenser) (*Fanout, error) {
 		}
 	}
 	if len(f.loadFactor) != len(toHosts) {
-		return nil, errors.New("load-factor must be specified for all hosts")
+		return nil, errors.New("load-factor params count must be the same as the number of hosts")
 	}
 
 	if f.workerCount > len(f.clients) || f.workerCount == 0 {

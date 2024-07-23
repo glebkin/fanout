@@ -17,7 +17,6 @@
 package fanout
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -108,31 +107,28 @@ func parsefanoutStanza(c *caddyfile.Dispenser) (*Fanout, error) {
 
 	normalized := plugin.Host(f.from).NormalizeExact()
 	if len(normalized) == 0 {
-		return nil, fmt.Errorf("unable to normalize '%s'", f.from)
+		return nil, errors.Errorf("unable to normalize '%s'", f.from)
 	}
-
 	f.from = normalized[0]
+
 	to := c.RemainingArgs()
 	if len(to) == 0 {
 		return f, c.ArgErr()
 	}
-
 	toHosts, err := parse.HostPortOrFile(to...)
 	if err != nil {
 		return f, err
 	}
-
 	for c.NextBlock() {
 		err = parseValue(strings.ToLower(c.Val()), f, c)
 		if err != nil {
 			return nil, err
 		}
 	}
-
-	if f.serverCount > len(toHosts) {
+	initClients(f, toHosts)
+	if f.serverCount > len(toHosts) || f.serverCount == 0 {
 		f.serverCount = len(toHosts)
 	}
-	// set default load factor for all hosts
 	if len(f.loadFactor) == 0 {
 		for range len(toHosts) {
 			f.loadFactor = append(f.loadFactor, maxLoadFactor)
@@ -142,32 +138,27 @@ func parsefanoutStanza(c *caddyfile.Dispenser) (*Fanout, error) {
 		return nil, errors.New("load-factor must be specified for all hosts")
 	}
 
-	transports := make([]string, len(toHosts))
-	for i, host := range toHosts {
+	if f.workerCount > len(f.clients) || f.workerCount == 0 {
+		f.workerCount = len(f.clients)
+	}
+
+	return f, nil
+}
+
+func initClients(f *Fanout, hosts []string) {
+	transports := make([]string, len(hosts))
+	for i, host := range hosts {
 		trans, h := parse.Transport(host)
-		p := NewClient(h, f.net)
-		f.clients = append(f.clients, p)
+		f.clients = append(f.clients, NewClient(h, f.net))
 		transports[i] = trans
 	}
 
-	if f.tlsServerName != "" {
-		f.tlsConfig.ServerName = f.tlsServerName
-	}
+	f.tlsConfig.ServerName = f.tlsServerName
 	for i := range f.clients {
 		if transports[i] == transport.TLS {
 			f.clients[i].SetTLSConfig(f.tlsConfig)
 		}
 	}
-
-	workerCount := f.workerCount
-
-	if workerCount > len(f.clients) || workerCount == 0 {
-		workerCount = len(f.clients)
-	}
-
-	f.workerCount = workerCount
-
-	return f, nil
 }
 
 func parseValue(v string, f *Fanout, c *caddyfile.Dispenser) error {
@@ -234,7 +225,7 @@ func parseIgnoredFromFile(f *Fanout, c *caddyfile.Dispenser) error {
 	for i := 0; i < len(names); i++ {
 		normalized := plugin.Host(names[i]).NormalizeExact()
 		if len(normalized) == 0 {
-			return fmt.Errorf("unable to normalize '%s'", names[i])
+			return errors.Errorf("unable to normalize '%s'", names[i])
 		}
 		f.excludeDomains.AddString(normalized[0])
 	}
@@ -249,7 +240,7 @@ func parseIgnored(f *Fanout, c *caddyfile.Dispenser) error {
 	for i := 0; i < len(ignore); i++ {
 		normalized := plugin.Host(ignore[i]).NormalizeExact()
 		if len(normalized) == 0 {
-			return fmt.Errorf("unable to normalize '%s'", ignore[i])
+			return errors.Errorf("unable to normalize '%s'", ignore[i])
 		}
 		f.excludeDomains.AddString(normalized[0])
 	}
@@ -283,7 +274,7 @@ func parseLoadFactor(f *Fanout, c *caddyfile.Dispenser) error {
 		}
 
 		if loadFactor < minLoadFactor {
-			return errors.New("load-factor should be more or equal 1.")
+			return errors.New("load-factor should be more or equal 1")
 		}
 		if loadFactor > maxLoadFactor {
 			return errors.Errorf("load-factor more then max value: %d", maxLoadFactor)

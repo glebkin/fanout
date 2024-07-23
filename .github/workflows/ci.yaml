@@ -40,7 +40,7 @@ jobs:
         with:
           go-version: 1.22.5
       - name: Install gotestsum
-        run: go get gotest.tools/gotestsum@v0.4.0
+        run: go install gotest.tools/gotestsum@v0.4.0
       - name: Run tests
         run: |
           eval $(go env)
@@ -50,7 +50,7 @@ jobs:
     name: golangci-lint
     runs-on: ubuntu-latest
     env:
-      GOLANGCI_LINT_CONTAINER: golangci/golangci-lint:v1.23.2
+      GOLANGCI_LINT_CONTAINER: golangci/golangci-lint:v1.59.1
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
@@ -126,7 +126,7 @@ jobs:
         with:
           go-version: 1.22.5
       - name: Install go-header
-        run: 'go get github.com/denis-tingajkin/go-header@v0.2.2'
+        run: 'go install github.com/denis-tingajkin/go-header@v0.2.2'
       - name: Run go-header
         run: |
           eval $(go env)

@@ -84,7 +84,7 @@ func (f *Fanout) ServeDNS(ctx context.Context, w dns.ResponseWriter, m *dns.Msg)
 	}
 	timeoutContext, cancel := context.WithTimeout(ctx, f.timeout)
 	defer cancel()
-	result := f.getFanoutResult(timeoutContext, f.runWorkers(timeoutContext, req))
+	result := f.getFanoutResult(timeoutContext, f.runWorkers(timeoutContext, &req))
 	if result == nil {
 		return dns.RcodeServerFailure, timeoutContext.Err()
 	}
@@ -112,7 +112,7 @@ type clientSelector interface {
 	Pick() Client
 }
 
-func (f *Fanout) runWorkers(ctx context.Context, req request.Request) chan *response {
+func (f *Fanout) runWorkers(ctx context.Context, req *request.Request) chan *response {
 	var sel clientSelector
 	if f.serverCount == len(f.clients) {
 		sel = selector.NewSimpleSelector(f.clients)
@@ -144,7 +144,7 @@ func (f *Fanout) runWorkers(ctx context.Context, req request.Request) chan *resp
 					select {
 					case <-ctx.Done():
 						return
-					case responseCh <- f.processClient(ctx, c, req):
+					case responseCh <- f.processClient(ctx, c, &request.Request{W: req.W, Req: req.Req}):
 					}
 				}
 			}()
@@ -191,7 +191,7 @@ func (f *Fanout) match(state *request.Request) bool {
 	return true
 }
 
-func (f *Fanout) processClient(ctx context.Context, c Client, r request.Request) *response {
+func (f *Fanout) processClient(ctx context.Context, c Client, r *request.Request) *response {
 	start := time.Now()
 	var err error
 	for j := 0; j < f.attempts || f.attempts == 0; <-time.After(attemptDelay) {
@@ -199,7 +199,7 @@ func (f *Fanout) processClient(ctx context.Context, c Client, r request.Request)
 			return &response{client: c, response: nil, start: start, err: ctx.Err()}
 		}
 		var msg *dns.Msg
-		msg, err = c.Request(ctx, &r)
+		msg, err = c.Request(ctx, r)
 		if err == nil {
 			return &response{client: c, response: msg, start: start, err: err}
 		}

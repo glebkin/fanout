@@ -19,7 +19,6 @@ package fanout
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"strings"
@@ -112,7 +111,7 @@ type fanoutTestSuite struct {
 }
 
 func TestFanout_ExceptFile(t *testing.T) {
-	file, err := ioutil.TempFile(os.TempDir(), t.Name())
+	file, err := os.CreateTemp(os.TempDir(), t.Name())
 	exclude := []string{"example1.com.", "example2.com."}
 	require.Nil(t, err)
 	defer func() {
@@ -177,7 +176,7 @@ func (t *fanoutTestSuite) TestWorkerCountLessThenServers() {
 	f.from = "."
 
 	for i := 0; i < 4; i++ {
-		incorrectServer := newServer(t.network, func(w dns.ResponseWriter, r *dns.Msg) {
+		incorrectServer := newServer(t.network, func(_ dns.ResponseWriter, _ *dns.Msg) {
 		})
 		f.addClient(NewClient(incorrectServer.addr, t.network))
 		closeFuncs = append(closeFuncs, incorrectServer.close)
@@ -280,9 +279,8 @@ func (t *fanoutTestSuite) TestBusyServer() {
 	var requestNum, answerCount int32
 	totalRequestNum := int32(5)
 	s := newServer(t.network, func(w dns.ResponseWriter, r *dns.Msg) {
-		if atomic.LoadInt32(&requestNum)%2 == 0 {
-			// server is busy
-		} else if r.Question[0].Name == testQuery {
+		serverIsBusy := atomic.LoadInt32(&requestNum)%2 == 0
+		if !serverIsBusy && r.Question[0].Name == testQuery {
 			msg := dns.Msg{
 				Answer: []dns.RR{makeRecordA("example1 3600	IN	A 10.0.0.1")},
 			}

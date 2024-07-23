@@ -1,6 +1,6 @@
 module github.com/networkservicemesh/fanout
 
-go 1.22.5
+go 1.22
 
 require (
 	github.com/coredns/caddy v1.1.1

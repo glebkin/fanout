@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"math/rand/v2"
 	"net"
 	"os"
 	"strings"
@@ -40,6 +41,47 @@ import (
 )
 
 const testQuery = "example1."
+
+type clients struct {
+	name       string
+	loadFactor int
+}
+
+func TestRand(t *testing.T) {
+	cls := []clients{
+		{
+			name:       "cl1",
+			loadFactor: 100,
+		},
+		{
+			name:       "cl2",
+			loadFactor: 50,
+		},
+		{
+			name:       "cl3",
+			loadFactor: 80,
+		},
+	}
+
+	totalWeight := 0
+	for _, c := range cls {
+		totalWeight += c.loadFactor
+	}
+
+	for range len(cls) {
+		gen := rand.IntN(totalWeight)
+		fmt.Println("Got rand: ", gen)
+
+		cursor := 0
+		for _, c := range cls {
+			cursor += c.loadFactor
+			if cursor >= gen {
+				fmt.Println("Got val: ", c)
+				break
+			}
+		}
+	}
+}
 
 type cachedDNSWriter struct {
 	answers []*dns.Msg
@@ -374,6 +416,6 @@ func TestFanoutTCPSuite(t *testing.T) {
 func nxdomainMsg() *dns.Msg {
 	return &dns.Msg{MsgHdr: dns.MsgHdr{Rcode: dns.RcodeNameError},
 		Question: []dns.Question{{Name: "wwww.example1.", Qclass: dns.ClassINET, Qtype: dns.TypeTXT}},
-		Ns: []dns.RR{test.SOA("example1.	1800	IN	SOA	example1.net. example1.com 1461471181 14400 3600 604800 14400")},
+		Ns:       []dns.RR{test.SOA("example1.	1800	IN	SOA	example1.net. example1.com 1461471181 14400 3600 604800 14400")},
 	}
 }

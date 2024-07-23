@@ -20,6 +20,8 @@ import "time"
 
 const (
 	maxIPCount     = 100
+	maxLoadFactor  = 100
+	minLoadFactor  = 1
 	maxWorkerCount = 32
 	minWorkerCount = 2
 	maxTimeout     = 2 * time.Second

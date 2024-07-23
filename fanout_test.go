@@ -362,6 +362,45 @@ func (t *fanoutTestSuite) TestTwoServers() {
 	t.Equal(answerCount2, expected)
 }
 
+func (t *fanoutTestSuite) TestServerCount() {
+	defer goleak.VerifyNone(t.T())
+	const expected = 1
+	var mutex sync.Mutex
+	answerCount := 0
+
+	testFunc := func(w dns.ResponseWriter, r *dns.Msg) {
+		if r.Question[0].Name == testQuery {
+			msg := dns.Msg{
+				Answer: []dns.RR{makeRecordA("example1 3600	IN	A 10.0.0.1")},
+			}
+			mutex.Lock()
+			answerCount++
+			mutex.Unlock()
+			msg.SetReply(r)
+			logErrIfNotNil(w.WriteMsg(&msg))
+		}
+	}
+	s1 := newServer(t.network, testFunc)
+	defer s1.close()
+	s2 := newServer(t.network, testFunc)
+	defer s2.close()
+
+	c1 := NewClient(s1.addr, t.network)
+	c2 := NewClient(s2.addr, t.network)
+	f := New()
+	f.net = t.network
+	f.from = "."
+	f.addClient(c1)
+	f.addClient(c2)
+	f.serverCount = 1
+
+	req := new(dns.Msg)
+	req.SetQuestion(testQuery, dns.TypeA)
+	_, err := f.ServeDNS(context.TODO(), &test.ResponseWriter{}, req)
+	t.Nil(err)
+	t.Equal(expected, answerCount)
+}
+
 func TestFanoutUDPSuite(t *testing.T) {
 	suite.Run(t, &fanoutTestSuite{network: udp})
 }

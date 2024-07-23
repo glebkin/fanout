@@ -51,6 +51,7 @@ func TestWeightedRand_Pick(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			wrs := NewWeightedRandSelector(tc.values, tc.weights)
 			// init rand with constant seed to get predefined result
+			//nolint:gosec
 			wrs.r = rand.New(rand.NewPCG(1, 2))
 
 			actual := make([]string, 0, tc.picksCount)

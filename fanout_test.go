@@ -398,7 +398,10 @@ func (t *fanoutTestSuite) TestServerCount() {
 	req.SetQuestion(testQuery, dns.TypeA)
 	_, err := f.ServeDNS(context.TODO(), &test.ResponseWriter{}, req)
 	t.Nil(err)
+
+	mutex.Lock()
 	t.Equal(expected, answerCount)
+	mutex.Unlock()
 }
 
 func TestFanoutUDPSuite(t *testing.T) {

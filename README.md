@@ -130,8 +130,7 @@ example.org {
 Sends parallel requests between three resolver sequentially (default mode).
 ~~~ corefile
 example.org {
-    fanout . 127.0.0.1:9005 127.0.0.1:9006 127.0.0.1:9007 {
-        policy sequential
-    }
+    fanout . 127.0.0.1:9005 127.0.0.1:9006 127.0.0.1:9007
+    policy sequential
 }
 ~~~

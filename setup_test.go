@@ -125,10 +125,8 @@ func TestSetup(t *testing.T) {
 			if !reflect.DeepEqual(selectionPolicy.loadFactor, test.expectedLoadFactor) {
 				t.Fatalf("Test %d: expected: %d, got: %d", i, test.expectedLoadFactor, selectionPolicy.loadFactor)
 			}
-		} else {
-			if ok {
-				t.Fatalf("Test %d: expected sequential policy to be set, got: %T", i, f.serverSelectionPolicy)
-			}
+		} else if ok {
+			t.Fatalf("Test %d: expected sequential policy to be set, got: %T", i, f.serverSelectionPolicy)
 		}
 	}
 }

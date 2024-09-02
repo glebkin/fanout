@@ -119,10 +119,11 @@ If `race` is enable, we will get `NXDOMAIN` result quickly, otherwise we will ge
 Sends parallel requests between two randomly selected resolvers. Note, that `127.0.0.1:9007` would be selected more frequently as it has the highest `load-factor`.
 ~~~ corefile
 example.org {
-    fanout . 127.0.0.1:9005 127.0.0.1:9006 127.0.0.1:9007
-    policy weighted-random {
-      server-count 2
-      load-factor 50 70 100
+    fanout . 127.0.0.1:9005 127.0.0.1:9006 127.0.0.1:9007 {
+      policy weighted-random {
+        server-count 2
+        load-factor 50 70 100
+      }
     }
 }
 ~~~
@@ -130,7 +131,8 @@ example.org {
 Sends parallel requests between three resolver sequentially (default mode).
 ~~~ corefile
 example.org {
-    fanout . 127.0.0.1:9005 127.0.0.1:9006 127.0.0.1:9007
-    policy sequential
+    fanout . 127.0.0.1:9005 127.0.0.1:9006 127.0.0.1:9007 {
+      policy sequential
+    }
 }
 ~~~

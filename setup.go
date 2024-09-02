@@ -163,11 +163,11 @@ func initServerSelectionPolicy(f *Fanout) error {
 
 	loadFactor := f.loadFactor
 	if len(loadFactor) == 0 {
-		for i := 0; i < f.serverCount; i++ {
+		for i := 0; i < len(f.clients); i++ {
 			loadFactor = append(loadFactor, maxLoadFactor)
 		}
 	}
-	if len(loadFactor) != f.serverCount {
+	if len(loadFactor) != len(f.clients) {
 		return errors.New("load-factor params count must be the same as the number of hosts")
 	}
 

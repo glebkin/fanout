@@ -128,7 +128,8 @@ func parsefanoutStanza(c *caddyfile.Dispenser) (*Fanout, error) {
 		}
 	}
 	initClients(f, toHosts)
-	if err = initServerSelectionPolicy(f); err != nil {
+	err = initServerSelectionPolicy(f)
+	if err != nil {
 		return nil, err
 	}
 
